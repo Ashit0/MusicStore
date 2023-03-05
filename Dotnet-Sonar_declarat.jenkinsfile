@@ -1,0 +1,47 @@
+pipeline{
+    agent{
+        label "JDK_11"
+    }
+    stages {
+        stage("vcs") {
+            steps {
+                git url: 'https://github.com/Ashit0/MusicStore.git',
+                    branch: 'main'
+            }
+        }
+        stage('restore') {
+            steps {
+                sh 'dotnet restore ./MusicStore/MusicStore.csproj'
+            }
+        }
+        stage('build'){
+            steps{
+                sh 'dotnet build ./MusicStore/MusicStore.csproj'
+            }
+        }
+        stage('npm install'){
+            steps{
+                sh 'npm install /home/AsNode1/workspace/workspace/Spc-Sonar/MusicStore/ClientApp'
+            }
+        }
+        stage('test'){
+            steps{
+                sh 'npm test /home/AsNode1/workspace/workspace/Spc-Sonar/MusicStore/ClientApp'
+            }
+        }
+        stage('sonar analysis') {
+            steps {
+                // performing sonarqube analysis with "withSonarQubeENV(<Name of Server configured in Jenkins>)"
+                withSonarQubeEnv('SONAR_CLOUD') {
+                    sh '   sonar:sonar -Dsonar.organization=Ashit0@github'
+                }
+            }
+        } 
+        stage('post build'){
+            steps{
+                junit testResults: '**/surefire-reports/TEST-*.xml'
+
+            }
+        } 
+    }
+}    
